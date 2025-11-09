@@ -1,0 +1,40 @@
+
+substitutions:
+  _SERVICE_NAME: ppc-marketing-calculator
+  _REGION: europe-west1
+  _REPOSITORY: web-apps
+
+options:
+  substitutionOption: 'ALLOW_LOOSE'
+  logging: CLOUD_LOGGING_ONLY
+steps:
+  - id: 'Build container image'
+    name: 'gcr.io/cloud-builders/docker'
+    args:
+      - 'build'
+      - '-t'
+      - 'europe-west1-docker.pkg.dev/$PROJECT_ID/$_REPOSITORY/$_SERVICE_NAME:$SHORT_SHA'
+      - '.'
+
+  - id: 'Push image'
+    name: 'gcr.io/cloud-builders/docker'
+    args:
+      - 'push'
+      - 'europe-west1-docker.pkg.dev/$PROJECT_ID/$_REPOSITORY/$_SERVICE_NAME:$SHORT_SHA'
+
+  - id: 'Deploy to Cloud Run'
+    name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+    entrypoint: 'gcloud'
+    args:
+      - 'run'
+      - 'deploy'
+      - '$_SERVICE_NAME'
+      - '--image'
+      - 'europe-west1-docker.pkg.dev/$PROJECT_ID/$_REPOSITORY/$_SERVICE_NAME:$SHORT_SHA'
+      - '--region'
+      - '$_REGION'
+      - '--platform=managed'
+      - '--allow-unauthenticated'
+
+images:
+  - 'europe-west1-docker.pkg.dev/$PROJECT_ID/$_REPOSITORY/$_SERVICE_NAME:$SHORT_SHA'
